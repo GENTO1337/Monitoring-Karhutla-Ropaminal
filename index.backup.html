@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Cyber Paminal Monitoring Karhutla — Bencana Alam Indonesia Realtime</title>
+<link rel="icon" type="image/png" href="https://e.top4top.io/p_3890wkoli1.jpeg"/>
+<meta name="description" content="Dashboard monitoring bencana alam realtime Indonesia"/>
+<!-- Copyright Protection -->
+<meta name="copyright" content="© 2025 Cyber Paminal. Hak Cipta Dilindungi."/>
+<meta name="author" content="Cyber Paminal"/>
+<meta name="robots" content="noindex, nofollow"/>
+<!-- Anti iframe embedding -->
+<script>if(window.top!==window.self){window.top.location=window.self.location;}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Globe.gl — 3D WebGL Globe (sama seperti WorldMonitor) -->
+<script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<style>
+/* ══ ROOT & RESET ══ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000;--bg2:#04070c;--bg3:#080f18;--bg4:#0e1822;--bg5:#182030;
+  --border:#0c1520;--border2:#162030;--border3:#1e2e42;
+  --text:#9ab0c8;--text2:#486080;--text3:#283848;--text4:#182030;
+  --white:#d8eaf8;
+  --accent:#00d890;--accent2:#0094e8;--accent3:#7c3aed;
+  --fire:#ff4500;--fire2:#ff6835;
+  --flood:#0077b6;--flood2:#00b4d8;
+  --quake:#f4a261;--quake2:#e76f51;
+  --land:#5a8040;--land2:#90b850;
+  --volcano:#e63946;--volcano2:#ff5060;
+  --wind:#8040d0;--wind2:#b070f0;
+  --hotspot:#e87000;
+  --kritis:#ff2020;--tinggi:#e87000;--sedang:#e8c000;--rendah:#00d890;
+  --gemini:#4285f4;--gemini2:#ea4335;--gemini3:#fbbc04;--gemini4:#34a853;
+  --header:34px;--sub:22px;--bot:220px;
+  --font:'IBM Plex Mono',monospace;--font2:'Inter',sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:11px;-webkit-font-smoothing:antialiased}
+
+/* ══ 3D GLOBE ══ */
+#globe-container{
+  position:absolute;inset:0;z-index:20;
+  display:none;background:#000408;
+  overflow:hidden;
+}
+#globe-container.active{display:block;}
+#globe-container canvas{display:block;}
+
+/* 2D/3D toggle */
+.view-toggle{
+  display:flex;gap:1px;align-items:center;
+}
+.vtbtn{
+  background:none;border:1px solid var(--border2);color:var(--text3);
+  padding:2px 9px;font-family:var(--font);font-size:8px;font-weight:700;
+  cursor:pointer;letter-spacing:.08em;transition:all .12s;
+  border-radius:0;
+}
+.vtbtn:first-child{border-radius:2px 0 0 2px}
+.vtbtn:last-child{border-radius:0 2px 2px 0;border-left:none}
+.vtbtn.on{
+  background:var(--accent);color:#000;border-color:var(--accent);
+  box-shadow:0 0 8px var(--accent)44;
+}
+.vtbtn:hover:not(.on){background:var(--bg3);color:var(--text);}
+
+/* Globe info overlay */
+#globe-info{
+  position:absolute;top:10px;right:10px;z-index:200;
+  background:rgba(0,4,10,.92);border:1px solid var(--border2);
+  border-radius:2px;padding:7px 12px;font-size:8.5px;
+  color:var(--text);line-height:1.7;pointer-events:none;
+  backdrop-filter:blur(8px);min-width:160px;
+}
+.gi-row{display:flex;align-items:center;gap:5px}
+.gi-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#globe-tip{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  font-size:8px;color:var(--text3);z-index:200;pointer-events:none;
+  letter-spacing:.08em;
+}
+::-webkit-scrollbar{width:2px;height:2px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:1px}
+a{color:inherit;text-decoration:none}
+
+/* ══ TOPBAR ══ */
+#topbar{
+  position:fixed;top:0;left:0;right:0;height:var(--header);
+  background:#000;border-bottom:1px solid var(--border2);z-index:300;
+  display:flex;align-items:center;
+}
+.tb-seg{
+  display:flex;align-items:center;gap:6px;padding:0 10px;
+  height:100%;border-right:1px solid var(--border);flex-shrink:0;
+}
+.tb-seg:last-child{border-right:none;margin-left:auto}
+.logo-wrap{display:flex;align-items:center;gap:8px}
+.logo-icon{font-size:15px}
+.logo-name{
+  font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.18em;
+  color:var(--white);text-transform:uppercase;
+}
+.logo-ver{font-size:7.5px;color:var(--text3);letter-spacing:.06em}
+.live-pill{
+  display:flex;align-items:center;gap:3px;padding:2px 7px;
+  border-radius:1px;background:rgba(255,32,32,.12);border:1px solid rgba(255,32,32,.35);
+  font-size:7.5px;font-weight:700;color:var(--kritis);letter-spacing:.15em;
+}
+.live-dot{width:5px;height:5px;background:var(--kritis);border-radius:50%;animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.tb-select{
+  background:#000;border:1px solid var(--border3);color:var(--text);
+  padding:3px 7px;border-radius:2px;font-size:9px;font-family:var(--font);
+  cursor:pointer;outline:none;min-width:175px;
+}
+.tb-select:hover,.tb-select:focus{border-color:var(--accent);outline:none}
+.alert-pill{
+  display:flex;align-items:center;gap:4px;padding:2px 9px;border-radius:1px;
+  font-size:8px;font-weight:700;letter-spacing:.1em;cursor:default;
+}
+.al-normal{background:rgba(0,216,144,.07);color:var(--rendah);border:1px solid rgba(0,216,144,.18)}
+.al-siaga{background:rgba(232,192,0,.07);color:var(--sedang);border:1px solid rgba(232,192,0,.2)}
+.al-tinggi{background:rgba(232,112,0,.09);color:var(--tinggi);border:1px solid rgba(232,112,0,.25)}
+.al-kritis{background:rgba(255,32,32,.1);color:var(--kritis);border:1px solid rgba(255,32,32,.3);animation:pulse-pill 1.5s infinite}
+@keyframes pulse-pill{0%,100%{box-shadow:0 0 0 0 rgba(255,32,32,.25)}50%{box-shadow:0 0 0 4px rgba(255,32,32,0)}}
+.chip{
+  display:flex;align-items:center;gap:2px;padding:2px 6px;border-radius:1px;
+  font-size:7.5px;font-weight:700;border:1px solid;white-space:nowrap;letter-spacing:.05em;
+}
+.ch-fire{color:var(--fire);border-color:rgba(255,69,0,.28);background:rgba(255,69,0,.05)}
+.ch-flood{color:var(--flood2);border-color:rgba(0,180,216,.28);background:rgba(0,119,182,.05)}
+.ch-eq{color:var(--quake);border-color:rgba(244,162,97,.28);background:rgba(244,162,97,.05)}
+.ch-vol{color:var(--volcano2);border-color:rgba(230,57,70,.22);background:rgba(230,57,70,.05)}
+.ch-hs{color:var(--hotspot);border-color:rgba(232,112,0,.28);background:rgba(232,112,0,.05)}
+.tb-search-wrap{position:relative}
+.tb-search{
+  display:flex;align-items:center;gap:5px;background:var(--bg3);
+  border:1px solid var(--border2);border-radius:2px;padding:2px 8px;transition:border-color .15s;
+}
+.tb-search:focus-within{border-color:var(--accent)}
+.tb-search input{background:none;border:none;color:var(--text);font-family:var(--font);font-size:9px;outline:none;width:145px}
+.tb-search input::placeholder{color:var(--text3)}
+.search-icon{color:var(--text3);font-size:11px}
+#search-drop{
+  display:none;position:absolute;top:calc(100%+4px);right:0;width:290px;
+  background:var(--bg3);border:1px solid var(--border2);border-radius:2px;
+  z-index:500;max-height:320px;overflow-y:auto;
+  box-shadow:0 10px 40px rgba(0,0,0,.95);
+}
+.sd-item{padding:7px 11px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:7px;align-items:flex-start;transition:background .1s}
+.sd-item:hover{background:var(--bg4)}
+.sd-item:last-child{border-bottom:none}
+.sd-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.sd-title{font-size:9px;color:var(--text);margin-bottom:2px;line-height:1.3}
+.sd-sub{font-size:7.5px;color:var(--text3)}
+.sd-sev{font-size:7px;font-weight:700;padding:1px 4px;border-radius:1px;flex-shrink:0}
+.tb-btn{
+  background:none;border:1px solid var(--border2);color:var(--text2);
+  padding:2px 8px;border-radius:1px;cursor:pointer;font-size:8px;
+  font-family:var(--font);transition:all .12s;white-space:nowrap;letter-spacing:.04em;
+}
+.tb-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--border3)}
+.tb-btn.on{background:rgba(0,216,144,.1);color:var(--accent);border-color:rgba(0,216,144,.28)}
+
+/* ══ SUBBAR ══ */
+#subbar{
+  position:fixed;top:var(--header);left:0;right:0;height:var(--sub);
+  background:#000;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 10px;z-index:299;gap:14px;
+}
+.sb-l{display:flex;align-items:center;gap:10px}
+.sb-label{font-size:8px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.14em}
+.tf-grp{display:flex;gap:1px}
+.tf-btn{background:none;border:1px solid transparent;color:var(--text3);padding:1px 7px;border-radius:1px;cursor:pointer;font-size:8px;font-family:var(--font);transition:all .1s}
+.tf-btn:hover{color:var(--text)}
+.tf-btn.on{background:var(--bg4);border-color:var(--border2);color:var(--accent)}
+.sb-clock{font-size:9.5px;font-weight:600;color:var(--accent);letter-spacing:.1em}
+.sb-r{display:flex;align-items:center;gap:7px}
+.sb-evcount{font-size:8px;color:var(--text3)}
+.vbtn{background:none;border:1px solid var(--border2);color:var(--text2);padding:1px 7px;border-radius:1px;cursor:pointer;font-size:8px;font-family:var(--font)}
+.vbtn.on{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+
+/* ══ MAP ══ */
+#map-wrap{
+  position:fixed;
+  top:calc(var(--header) + var(--sub));
+  left:0;right:0;bottom:var(--bot);
+  background:#010508;z-index:10;min-height:160px;
+}
+#map-wrap::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.03) 0px,rgba(0,0,0,.03) 1px,transparent 1px,transparent 4px);
+  pointer-events:none;z-index:50;
+}
+#map-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.5) 100%);
+  pointer-events:none;z-index:51;
+}
+#map{width:100%!important;height:100%!important;min-height:160px;background:#010508;z-index:10}
+
+/* ── Layer Panel ── */
+#lpanel{
+  position:absolute;top:8px;left:8px;width:165px;z-index:100;
+  background:rgba(0,4,10,.96);border:1px solid var(--border2);border-radius:2px;
+  backdrop-filter:blur(12px);
+}
+.lp-hd{
+  padding:5px 9px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.lp-ttl{font-size:7.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.16em}
+.lp-cnt{font-size:8.5px;font-weight:700;color:var(--accent)}
+.li{
+  display:flex;align-items:center;gap:5px;padding:4px 9px;cursor:pointer;
+  border-bottom:1px solid rgba(12,21,32,.7);transition:background .1s;
+}
+.li:last-child{border-bottom:none}
+.li:hover{background:rgba(255,255,255,.02)}
+.li.off .li-lbl,.li.off .li-dot{opacity:.22}
+.li-chk{
+  width:10px;height:10px;border:1px solid var(--border3);border-radius:1px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .1s;
+}
+.li-chk.on{background:var(--accent);border-color:var(--accent)}
+.li-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.li-ico{font-size:10px;flex-shrink:0;line-height:1}
+.li-lbl{font-size:8px;color:var(--text);flex:1}
+.li-num{font-size:7.5px;color:var(--text3)}
+
+/* ── Legend ── */
+#legend{
+  position:absolute;bottom:5px;left:50%;transform:translateX(-50%);
+  background:rgba(0,4,10,.92);border:1px solid var(--border2);
+  border-radius:2px;padding:4px 12px;display:flex;gap:12px;
+  align-items:center;z-index:100;backdrop-filter:blur(6px);
+}
+.leg{display:flex;align-items:center;gap:3px;font-size:7.5px;color:var(--text2)}
+.leg-d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.leg-sep{width:1px;height:9px;background:var(--border2)}
+
+/* ── Map popup ── */
+.leaflet-popup-content-wrapper{
+  background:rgba(0,4,10,.98)!important;border:1px solid var(--border3)!important;
+  border-radius:2px!important;color:var(--text)!important;
+  box-shadow:0 10px 40px rgba(0,0,0,.95)!important;
+}
+.leaflet-popup-tip{background:rgba(0,4,10,.98)!important}
+.leaflet-popup-content{margin:10px 13px!important;min-width:210px;max-width:260px}
+.lp-type{font-size:7px;text-transform:uppercase;letter-spacing:.14em;font-weight:700;margin-bottom:3px}
+.lp-title{font-size:11px;font-weight:700;color:var(--white);margin-bottom:3px;line-height:1.3}
+.lp-loc{font-size:8px;color:var(--accent2);margin-bottom:5px}
+.lp-sev{display:inline-flex;align-items:center;gap:3px;font-size:7px;font-weight:700;padding:1px 5px;border-radius:1px;margin-bottom:4px}
+.lp-desc{font-size:9px;color:var(--text2);line-height:1.55;margin-bottom:6px}
+.lp-link{font-size:8px;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:3px}
+.lp-link:hover{color:var(--white)}
+.leaflet-control-zoom a{
+  background:rgba(0,4,10,.95)!important;color:var(--text)!important;
+  border-bottom:1px solid var(--border)!important;font-family:var(--font)!important;transition:background .1s!important;
+}
+.leaflet-control-zoom a:hover{background:var(--bg4)!important}
+.leaflet-control-zoom{border:1px solid var(--border2)!important;border-radius:2px!important}
+
+/* ── Disaster markers ── */
+.dm{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:10px;border:1.5px solid rgba(255,255,255,.2);
+  cursor:pointer;transition:transform .12s}
+.dm:hover{transform:scale(1.5)!important}
+.dm-fire{background:rgba(255,69,0,.85);box-shadow:0 0 8px rgba(255,69,0,.5)}
+.dm-flood{background:rgba(0,119,182,.85);box-shadow:0 0 8px rgba(0,119,182,.5)}
+.dm-quake{background:rgba(244,162,97,.85);box-shadow:0 0 8px rgba(244,162,97,.5)}
+.dm-land{background:rgba(90,128,64,.85);box-shadow:0 0 8px rgba(90,128,64,.5)}
+.dm-volcano{background:rgba(230,57,70,.85);box-shadow:0 0 8px rgba(230,57,70,.5)}
+.dm-wind{background:rgba(128,64,208,.85);box-shadow:0 0 8px rgba(128,64,208,.5)}
+.dm-kritis{animation:pm 1.5s ease-in-out infinite}
+@keyframes pm{0%,100%{box-shadow:0 0 6px currentColor}50%{box-shadow:0 0 22px currentColor}}
+.hs-d{border-radius:50%;border:1px solid rgba(255,255,255,.18);cursor:pointer;
+  background:rgba(232,112,0,.75);box-shadow:0 0 5px rgba(232,112,0,.45)}
+.hs-sm{width:8px;height:8px}
+.hs-md{width:12px;height:12px}
+.hs-lg{width:18px;height:18px;animation:pm 2.5s ease-in-out infinite}
+
+/* ══ BOTTOM PANELS ══ */
+#bot{
+  position:fixed;left:0;right:0;bottom:0;height:var(--bot);
+  display:grid;grid-template-columns:355px 1fr 420px;
+  border-top:1px solid var(--border2);background:#000;z-index:200;
+}
+.bp{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.bp:last-child{border-right:none}
+.bphd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 9px;border-bottom:1px solid var(--border);
+  flex-shrink:0;height:22px;background:#000;
+}
+.bphd-l{display:flex;align-items:center;gap:5px}
+.bphd-title{font-size:8px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.16em}
+.badge-live{
+  background:var(--kritis);color:#fff;font-size:6.5px;font-weight:700;
+  padding:1px 4px;border-radius:1px;letter-spacing:.1em;animation:blink .9s step-end infinite;
+}
+.badge-new{background:var(--accent);color:#000;font-size:6.5px;font-weight:700;padding:1px 4px;border-radius:1px}
+.badge-gemini{
+  background:linear-gradient(90deg,var(--gemini),var(--gemini4));color:#fff;
+  font-size:6.5px;font-weight:700;padding:1px 5px;border-radius:1px;letter-spacing:.05em;
+}
+.bphd-r{display:flex;gap:3px;align-items:center}
+.bpbtn{
+  background:none;border:1px solid var(--border2);color:var(--text3);
+  padding:1px 5px;border-radius:1px;cursor:pointer;font-size:7.5px;
+  font-family:var(--font);transition:all .1s;letter-spacing:.04em;
+}
+.bpbtn:hover{background:var(--bg3);color:var(--text)}
+.bpbtn.on{background:rgba(0,216,144,.1);color:var(--accent);border-color:rgba(0,216,144,.28)}
+
+/* ══ LEFT: LIVE TV ══ */
+.tv-tabs{
+  display:flex;overflow-x:auto;border-bottom:1px solid var(--border);
+  flex-shrink:0;background:#000;
+}
+.tv-tabs::-webkit-scrollbar{height:1px}
+.tvtab{
+  padding:3px 10px;font-size:7.5px;white-space:nowrap;color:var(--text3);
+  cursor:pointer;border-right:1px solid var(--border);transition:all .1s;
+  flex-shrink:0;font-family:var(--font);font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:4px;
+}
+.tvtab:hover{background:var(--bg3);color:var(--text2)}
+.tvtab.on{background:rgba(255,32,32,.12);color:var(--kritis);border-bottom:2px solid var(--kritis)}
+.tv-frame-wrap{flex:1;position:relative;background:#000}
+.tv-frame{width:100%;height:100%;border:none;display:none}
+.tv-frame.on{display:block}
+.tv-offline{display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;background:var(--bg2);color:var(--text3);gap:8px}
+.tv-offline.on{display:flex}
+.tv-offline-icon{font-size:26px;opacity:.28}
+.tv-offline-text{font-size:9.5px;text-align:center;line-height:1.6;max-width:180px}
+.tv-ticker{
+  flex-shrink:0;height:19px;background:#000;border-top:1px solid var(--border);
+  display:flex;align-items:center;overflow:hidden;
+}
+.tv-tick-label{
+  flex-shrink:0;padding:0 8px;font-size:7px;font-weight:700;color:#000;
+  background:var(--kritis);height:100%;display:flex;align-items:center;letter-spacing:.14em;
+}
+.tv-tick-track{
+  display:flex;font-size:8px;color:var(--text);white-space:nowrap;
+  animation:ticker 90s linear infinite;padding-left:18px;
+}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tv-tick-track:hover{animation-play-state:paused}
+
+/* ══ CENTER: LIVE BERITA ONLINE ══ */
+.news-filter{
+  display:flex;align-items:center;gap:2px;padding:2px 7px;
+  border-bottom:1px solid var(--border);flex-shrink:0;background:#000;overflow-x:auto;
+}
+.news-filter::-webkit-scrollbar{height:1px}
+.nf-btn{
+  background:none;border:1px solid transparent;color:var(--text3);
+  padding:1px 7px;border-radius:1px;cursor:pointer;font-size:7.5px;
+  font-family:var(--font);white-space:nowrap;transition:all .1s;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.nf-btn:hover{background:var(--bg3);color:var(--text2)}
+.nf-btn.on{background:var(--bg4);border-color:var(--border2);color:var(--accent)}
+.nf-sep{width:1px;height:11px;background:var(--border);flex-shrink:0;margin:0 2px}
+.news-list{flex:1;overflow-y:auto;padding:0}
+.news-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--text3);font-size:9.5px}
+.spinner{width:18px;height:18px;border:1.5px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.nart{
+  display:flex;gap:7px;padding:5px 9px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .1s;align-items:flex-start;
+}
+.nart:hover{background:rgba(14,24,34,.9)}
+.nart-src{
+  flex-shrink:0;font-size:6.5px;font-weight:700;padding:1px 4px;border-radius:1px;
+  height:13px;display:flex;align-items:center;white-space:nowrap;letter-spacing:.05em;
+}
+.nart-body{flex:1;min-width:0}
+.nart-title{font-size:9px;color:var(--text);line-height:1.35;margin-bottom:2px}
+.nart-title.breaking{color:var(--kritis);font-weight:700}
+.nart-meta{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.nart-time{font-size:7px;color:var(--text3)}
+.nart-loc{font-size:7px;padding:1px 4px;border-radius:1px;background:var(--bg4);color:var(--accent2)}
+.nart-type{font-size:7px;padding:1px 4px;border-radius:1px}
+.nart-img{width:46px;height:34px;object-fit:cover;border-radius:2px;flex-shrink:0;background:var(--bg3)}
+.news-empty{padding:14px;text-align:center;font-size:9px;color:var(--text3);line-height:1.8}
+
+/* ══ RIGHT: SIAGA AI INSIGHTS ══ */
+#ai-panel{background:#000;display:flex;flex-direction:column}
+.ai-body{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ai-setup{
+  padding:6px 10px;display:flex;flex-direction:column;gap:5px;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.ai-setup-title{font-size:9px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px}
+.ai-setup-desc{font-size:8px;color:var(--text3);line-height:1.55}
+.ai-key-row{display:flex;gap:4px}
+.ai-key-input{
+  flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+  padding:4px 7px;border-radius:2px;font-size:9px;font-family:var(--font);outline:none;transition:border-color .15s;
+}
+.ai-key-input:focus{border-color:var(--accent)}
+.ai-key-input::placeholder{color:var(--text3)}
+.ai-key-btn{
+  background:var(--accent);color:#000;border:none;padding:4px 9px;border-radius:2px;
+  font-size:8px;font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s;
+}
+.ai-key-btn:hover{opacity:.85}
+.ai-key-status{font-size:8px;color:var(--text3)}
+.ai-key-status.ok{color:var(--rendah)}
+.ai-key-status.err{color:var(--kritis)}
+.ai-chat{flex:1;overflow-y:auto;padding:7px 10px;scroll-behavior:smooth}
+.ai-msg{margin-bottom:7px;animation:msgIn .2s ease-out}
+@keyframes msgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.ai-msg-role{
+  font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;
+  margin-bottom:2px;display:flex;align-items:center;gap:4px;
+}
+.role-ai{color:var(--accent)}
+.role-sys{color:var(--gemini)}
+.role-user{color:var(--text2)}
+.ai-msg-bubble{
+  font-size:10px;color:var(--text);line-height:1.72;
+  padding:8px 10px;border-radius:2px;border:1px solid var(--border);background:var(--bg3);
+}
+.ai-msg-bubble.ai-bubble{background:rgba(0,216,144,.04);border-color:rgba(0,216,144,.14)}
+.ai-msg-bubble.sys-bubble{background:rgba(66,133,244,.04);border-color:rgba(66,133,244,.14);font-size:9px;color:var(--text2)}
+.ai-msg-bubble strong{color:var(--white)}
+.ai-msg-bubble .hl{color:var(--accent);font-weight:600}
+.ai-msg-bubble .warn{color:var(--kritis);font-weight:600}
+.ai-msg-bubble .loc{color:var(--accent2)}
+.ai-typing{display:flex;align-items:center;gap:4px;padding:5px 10px;color:var(--text3);font-size:8px}
+.dot-pulse{display:flex;gap:3px}
+.dot-pulse span{width:4px;height:4px;border-radius:50%;background:var(--accent);animation:dp .8s ease-in-out infinite}
+.dot-pulse span:nth-child(2){animation-delay:.15s}
+.dot-pulse span:nth-child(3){animation-delay:.3s}
+@keyframes dp{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+.ai-input-area{
+  flex-shrink:0;padding:5px 7px;border-top:1px solid var(--border);
+  background:#000;display:flex;gap:4px;align-items:flex-end;
+}
+.ai-textarea{
+  flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+  padding:5px 7px;border-radius:2px;font-size:9px;font-family:var(--font);
+  outline:none;resize:none;height:30px;max-height:60px;
+  transition:border-color .15s;line-height:1.5;
+}
+.ai-textarea:focus{border-color:rgba(0,216,144,.35)}
+.ai-textarea::placeholder{color:var(--text3)}
+.ai-send-btn{
+  background:var(--accent);color:#000;border:none;width:28px;height:28px;
+  border-radius:2px;cursor:pointer;font-size:12px;display:flex;align-items:center;
+  justify-content:center;transition:opacity .15s;flex-shrink:0;
+}
+.ai-send-btn:hover{opacity:.85}
+.ai-send-btn:disabled{opacity:.28;cursor:not-allowed}
+.ai-quick-btns{
+  display:flex;gap:2px;padding:3px 7px;border-top:1px solid var(--border);
+  overflow-x:auto;flex-shrink:0;background:#000;
+}
+.ai-quick-btns::-webkit-scrollbar{height:1px}
+.ai-qbtn{
+  background:var(--bg3);border:1px solid var(--border2);color:var(--text3);
+  padding:2px 7px;border-radius:1px;cursor:pointer;font-size:7px;font-family:var(--font);
+  white-space:nowrap;transition:all .1s;flex-shrink:0;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.ai-qbtn:hover{background:var(--bg4);color:var(--text2)}
+
+/* ══ MODAL ══ */
+#modal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);
+}
+#modal.open{display:flex}
+#mbox{
+  background:var(--bg2);border:1px solid var(--border3);border-radius:2px;
+  width:500px;max-width:92vw;max-height:82vh;overflow-y:auto;
+  position:relative;animation:mIn .18s ease-out;
+}
+@keyframes mIn{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.minner{padding:18px 20px 22px}
+.mbtn-close{
+  position:absolute;top:10px;right:12px;background:rgba(255,255,255,.05);
+  border:1px solid var(--border2);color:var(--text2);width:22px;height:22px;
+  border-radius:50%;cursor:pointer;font-size:10px;display:flex;
+  align-items:center;justify-content:center;font-family:var(--font);transition:all .1s;
+}
+.mbtn-close:hover{background:rgba(255,32,32,.18);color:var(--kritis)}
+
+/* ══ TOAST ══ */
+#toast-wrap{
+  position:fixed;bottom:calc(var(--bot)+6px);right:6px;
+  display:flex;flex-direction:column;gap:4px;z-index:500;
+  width:265px;pointer-events:none;
+}
+.toast{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:2px;padding:7px 10px;display:flex;gap:7px;
+  align-items:flex-start;box-shadow:0 5px 20px rgba(0,0,0,.85);
+  pointer-events:auto;animation:tIn .22s ease-out;
+}
+.toast.out{animation:tOut .2s ease-in forwards}
+@keyframes tIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tOut{to{opacity:0;transform:translateX(22px)}}
+.t-ico{font-size:15px;flex-shrink:0}
+.t-body{flex:1;min-width:0}
+.t-title{font-size:9px;font-weight:700;margin-bottom:1px}
+.t-sub{font-size:8px;color:var(--text2);line-height:1.4}
+.t-fire{border-left:2px solid var(--fire)}
+.t-flood{border-left:2px solid var(--flood)}
+.t-earthquake{border-left:2px solid var(--quake)}
+.t-landslide{border-left:2px solid var(--land)}
+.t-volcano{border-left:2px solid var(--volcano)}
+.t-wind{border-left:2px solid var(--wind)}
+.t-ai{border-left:2px solid var(--accent)}
+
+/* ══ UTILS ══ */
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- ████ TOPBAR ████ -->
+<div id="topbar">
+  <!-- Logo -->
+  <div class="tb-seg">
+    <div class="logo-wrap">
+      <img src="https://e.top4top.io/p_3890wkoli1.jpeg" alt="Cyber Paminal" style="width:24px;height:24px;object-fit:contain;border-radius:3px;filter:drop-shadow(0 0 5px rgba(0,216,144,.45))"/>
+      <div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span class="logo-name" style="font-size:11px">CYBER PAMINAL</span>
+          <span style="font-size:7px;color:var(--accent);font-family:var(--font);font-weight:600;letter-spacing:.06em">v3.1</span>
+        </div>
+        <span class="logo-name" style="font-size:11px">MONITORING KARHUTLA</span>
+      </div>
+    </div>
+  </div>
+  <!-- LIVE + Region -->
+  <div class="tb-seg">
+    <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+    <select class="tb-select" id="reg-sel">
+      <option value="all">🇮🇩 Indonesia (Semua Wilayah)</option>
+      <option value="kalimantan">🌴 Kalimantan</option>
+      <option value="sulawesi">🏔 Sulawesi</option>
+      <option value="papua">🦜 Papua &amp; Papua Barat</option>
+      <option value="ntt">🌊 NTT / Flores / Timor</option>
+      <option value="lombok">🏖 Lombok / NTB / Sumbawa</option>
+      <option value="maluku">⛵ Maluku &amp; Maluku Utara</option>
+      <option value="jawa">🏙 Jawa</option>
+      <option value="sumatra">🌿 Sumatra</option>
+    </select>
+  </div>
+  <!-- Alert Level -->
+  <div class="tb-seg">
+    <div class="alert-pill al-kritis" id="alert-display">
+      ⚠ ALERT LVL <span id="alert-num">3</span> — TINGGI
+    </div>
+  </div>
+  <!-- Stat Chips -->
+  <div class="tb-seg" style="gap:5px">
+    <div class="chip ch-fire">🔥 <span id="c-fire">0</span></div>
+    <div class="chip ch-flood">🌊 <span id="c-flood">0</span></div>
+    <div class="chip ch-eq">🌋 <span id="c-eq">0</span></div>
+    <div class="chip ch-vol">🌄 <span id="c-vol">0</span></div>
+    <div class="chip ch-hs">🛰 <span id="c-hs">847</span></div>
+  </div>
+  <!-- Search -->
+  <div class="tb-seg" style="position:relative">
+    <div class="tb-search">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="srch" placeholder="Cari lokasi / bencana..." autocomplete="off"/>
+    </div>
+    <div id="search-drop"></div>
+  </div>
+  <!-- Right -->
+  <div class="tb-seg" style="gap:5px">
+    <!-- 2D / 3D VIEW TOGGLE — seperti WorldMonitor -->
+    <div class="view-toggle" style="margin-right:4px">
+      <button class="vtbtn on" id="btn-2d" onclick="setView2D()">2D</button>
+      <button class="vtbtn" id="btn-3d" onclick="setView3D()">3D</button>
+    </div>
+    <button class="tb-btn" id="btnFs">⛶ Fullscreen</button>
+    <button class="tb-btn" onclick="location.reload()">↺ Refresh</button>
+  </div>
+</div>
+
+<!-- ████ SUBBAR ████ -->
+<div id="subbar">
+  <div class="sb-l">
+    <span class="sb-label">SITUASI BENCANA</span>
+    <div class="tf-grp">
+      <button class="tf-btn" data-tf="1h">1J</button>
+      <button class="tf-btn" data-tf="6h">6J</button>
+      <button class="tf-btn" data-tf="24h">24J</button>
+      <button class="tf-btn on" data-tf="7d">7H</button>
+      <button class="tf-btn" data-tf="all">ALL</button>
+    </div>
+    <span class="sb-clock" id="clock">-- : -- : -- WIB</span>
+  </div>
+  <div class="sb-r">
+    <span class="sb-evcount" id="ev-lbl">Memuat data...</span>
+  </div>
+</div>
+
+<!-- ████ MAP ████ -->
+<div id="map-wrap">
+  <div id="map"></div>
+
+  <!-- ████ 3D GLOBE CONTAINER ████ -->
+  <div id="globe-container">
+    <!-- Globe.gl renders canvas here -->
+    <div id="globe-info">
+      <div style="font-size:7px;font-weight:700;color:var(--text3);letter-spacing:.14em;margin-bottom:5px">🌏 GLOBE 3D — REALTIME</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ff2020"></div> Gempa M≥6.5 (Kritis)</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ff6820"></div> Gempa M5.5–6.4 (Tinggi)</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#f4a261"></div> Gempa M4.5–5.4 (Sedang)</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ffd600"></div> Gempa &lt;M4.5 (Rendah)</div>
+      <div class="gi-row" style="margin-top:4px"><div class="gi-dot" style="background:#ff4500"></div> Kebakaran/Karhutla</div>
+    </div>
+    <div id="globe-tip">🖱 Klik titik untuk detail · Scroll untuk zoom · Drag untuk rotasi</div>
+  </div>
+
+  <!-- Layer Panel -->
+  <div id="lpanel">
+    <div class="lp-hd">
+      <span class="lp-ttl">LAYERS</span>
+      <span class="lp-cnt" id="lp-active">8</span>
+    </div>
+    <div id="layer-list"></div>
+  </div>
+  <!-- Legend -->
+  <div id="legend">
+    <div class="leg"><div class="leg-d" style="background:var(--kritis);box-shadow:0 0 4px var(--kritis)"></div>Kritis</div>
+    <div class="leg"><div class="leg-d" style="background:var(--tinggi);box-shadow:0 0 4px var(--tinggi)"></div>Tinggi</div>
+    <div class="leg"><div class="leg-d" style="background:var(--sedang)"></div>Sedang</div>
+    <div class="leg"><div class="leg-d" style="background:var(--rendah)"></div>Rendah</div>
+    <div class="leg-sep"></div>
+    <div class="leg"><div class="leg-d" style="background:var(--fire)"></div>Karhutla</div>
+    <div class="leg"><div class="leg-d" style="background:var(--flood)"></div>Banjir</div>
+    <div class="leg"><div class="leg-d" style="background:var(--quake)"></div>Gempa</div>
+    <div class="leg"><div class="leg-d" style="background:var(--volcano)"></div>Gunung Api</div>
+    <div class="leg"><div class="leg-d" style="background:var(--hotspot)"></div>Hotspot</div>
+    <div class="leg-sep"></div>
+    <span style="font-size:7px;color:var(--text3)">© CartoDB · BNPB · BMKG · NASA FIRMS</span>
+  </div>
+</div>
+
+<!-- ████ BOTTOM PANELS ████ -->
+<div id="bot">
+
+  <!-- ▌LEFT: LIVE TV ▐ -->
+  <div class="bp" id="tv-panel">
+    <div class="bphd">
+      <div class="bphd-l">
+        <span class="bphd-title">📺 Live TV News</span>
+        <span class="badge-live">LIVE</span>
+      </div>
+      <div class="bphd-r">
+        <button class="bpbtn" id="tv-mute-btn" onclick="toggleMute()">🔇</button>
+        <button class="bpbtn" onclick="refreshTV()">↺</button>
+      </div>
+    </div>
+    <!-- Channel tabs -->
+    <div class="tv-tabs" id="tv-tabs">
+      <div class="tvtab on" data-ch="kompas">
+        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#ff2020;animation:blink 1s step-end infinite"></span>
+        Kompas TV
+      </div>
+      <div class="tvtab" data-ch="tvone">
+        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#ff2020;animation:blink 1s step-end infinite"></span>
+        tvOne
+      </div>
+      <div class="tvtab" data-ch="inews">
+        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#ff2020;animation:blink 1s step-end infinite"></span>
+        iNews
+      </div>
+      <div class="tvtab" data-ch="cnn">
+        <span style="display:inline-block;width:4px;height:4px;border-radius:50%;background:#ff2020;animation:blink 1s step-end infinite"></span>
+        CNN ID
+      </div>
+    </div>
+    <!-- TV iframes -->
+    <div class="tv-frame-wrap" id="tv-frame-wrap">
+      <iframe id="tv-kompas" class="tv-frame on"
+        src="https://www.youtube.com/embed/DOOrIxw5xOw?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="Kompas TV Live"></iframe>
+      <iframe id="tv-tvone" class="tv-frame"
+        src="https://www.youtube.com/embed/rQJoEpzKkNk?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="tvOne News Live"></iframe>
+      <iframe id="tv-inews" class="tv-frame"
+        src="https://www.youtube.com/embed/WHTPYAvakTg?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="iNews TV Live"></iframe>
+      <iframe id="tv-cnn" class="tv-frame"
+        src="https://www.youtube.com/embed/PDDOkUq33Sw?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="CNN Indonesia Live"></iframe>
+    </div>
+    <!-- Breaking ticker -->
+    <div class="tv-ticker">
+      <div class="tv-tick-label">BREAKING</div>
+      <div class="tv-tick-track" id="tick-track"></div>
+    </div>
+  </div>
+
+  <!-- ▌CENTER: LIVE BERITA ONLINE ▐ -->
+  <div class="bp" id="news-panel">
+    <div class="bphd">
+      <div class="bphd-l">
+        <span class="bphd-title">📰 Berita Bencana Live</span>
+        <span class="badge-live">REALTIME</span>
+        <span style="font-size:7.5px;color:var(--text3)" id="news-count-lbl">—</span>
+      </div>
+      <div class="bphd-r">
+        <button class="bpbtn" id="news-auto-btn" onclick="toggleAutoRefresh()" title="Auto refresh">⟳ AUTO</button>
+        <button class="bpbtn" onclick="fetchAllNews()">↺</button>
+      </div>
+    </div>
+    <!-- Filter bar -->
+    <div class="news-filter" id="news-filter">
+      <span style="font-size:7.5px;color:var(--text3);flex-shrink:0">SENTIMEN:</span>
+      <button class="nf-btn on" data-src="all">Semua</button>
+      <button class="nf-btn" data-src="negative">⚠ Negatif</button>
+      <button class="nf-btn" data-src="positive">✓ Positif</button>
+      <button class="nf-btn" data-src="neutral">◎ Netral</button>
+      <div class="nf-sep"></div>
+      <span style="font-size:7.5px;color:var(--text3);flex-shrink:0">BENCANA:</span>
+      <button class="nf-btn" data-type="fire">🔥 Karhutla</button>
+      <button class="nf-btn" data-type="flood">🌊 Banjir</button>
+      <button class="nf-btn" data-type="earthquake">🌋 Gempa</button>
+      <button class="nf-btn" data-type="volcano">🌄 Gunung Api</button>
+      <button class="nf-btn" data-type="landslide">⛰ Longsor</button>
+      <button class="nf-btn" data-type="wind">🌀 Angin</button>
+    </div>
+    <!-- Articles -->
+    <div class="news-list" id="news-list">
+      <div class="news-loading">
+        <div class="spinner"></div>
+        <span>Mengambil berita bencana terbaru...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ▌RIGHT: SIAGA AO INSIGHTS ▐ -->
+  <div class="bp" id="ai-panel">
+    <div class="bphd">
+      <div class="bphd-l">
+        <span class="bphd-title">🤖 AI Insights</span>
+        <span class="badge-gemini">✦ GEMINI</span>
+      </div>
+      <div class="bphd-r">
+        <span class="badge-new hidden" id="ai-new-badge">0 BARU</span>
+        <button class="bpbtn" onclick="clearAIChat()">Bersihkan</button>
+        <button class="bpbtn" onclick="autoAnalyze()">⚡ Analisis</button>
+      </div>
+    </div>
+    <div class="ai-body">
+      <!-- API Key setup -->
+      <div class="ai-setup" id="ai-setup">
+        <div class="ai-setup-title">
+          <span style="font-size:14px">🤖</span>
+          SIAGA AI PAMINAL
+          <span style="font-size:7px;padding:1px 5px;border-radius:1px;background:rgba(0,216,144,.12);color:var(--accent);border:1px solid rgba(0,216,144,.25)">AUTO-CONNECT</span>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center">
+          <input type="password" class="ai-key-input" id="ai-key-input" placeholder="Konfigurasi otomatis..."/>
+          <button class="ai-key-btn" onclick="connectGemini()">↺</button>
+        </div>
+        <div class="ai-key-status" id="ai-key-status">⟳ Menghubungkan...</div>
+        <div style="display:flex;gap:10px;font-size:7.5px">
+          <span style="color:var(--text3)">📡 BMKG: <span id="data-status-bmkg" style="color:var(--text3)">⟳ Loading</span></span>
+          <span style="color:var(--text3)">📰 News: <span id="data-status-news" style="color:var(--text3)">⟳ Loading</span></span>
+        </div>
+      </div>
+      <!-- Chat -->
+      <div class="ai-chat" id="ai-chat"></div>
+      <!-- Typing indicator -->
+      <div class="ai-typing hidden" id="ai-typing">
+        <span style="font-size:10px">✦ Gemini sedang menganalisis</span>
+        <div class="dot-pulse"><span></span><span></span><span></span></div>
+      </div>
+      <!-- Quick questions -->
+      <div class="ai-quick-btns" id="ai-quick-btns">
+        <button class="ai-qbtn" onclick="quickAsk('Ringkaskan semua bencana aktif saat ini')">📋 Ringkasan</button>
+        <button class="ai-qbtn" onclick="quickAsk('Wilayah mana yang paling berisiko dan mengapa?')">⚠ Risiko</button>
+        <button class="ai-qbtn" onclick="quickAsk('Analisis karhutla Kalimantan terkini')">🔥 Karhutla</button>
+        <button class="ai-qbtn" onclick="quickAsk('Update status gunung api aktif Indonesia')">🌋 Gunung Api</button>
+        <button class="ai-qbtn" onclick="quickAsk('Prediksi cuaca dan potensi bencana 24 jam ke depan')">🌦 Prediksi</button>
+        <button class="ai-qbtn" onclick="quickAsk('Rekomendasi evakuasi untuk daerah kritis')">🚨 Evakuasi</button>
+      </div>
+      <!-- Input -->
+      <div class="ai-input-area">
+        <textarea class="ai-textarea" id="ai-input" placeholder="Tanya Gemini tentang bencana..." rows="2"></textarea>
+        <button class="ai-send-btn" id="ai-send" onclick="sendAIMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /bot -->
+
+<!-- ████ MODAL ████ -->
+<div id="modal">
+  <div id="mbox">
+    <div class="minner" id="minner">
+      <button class="mbtn-close" onclick="closeModal()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ████ TOASTS ████ -->
+<div id="toast-wrap"></div>
+
+<script src="siaga.min.js"></script>
+<!-- 🌋 Volcano Monitoring Module — MAGMA Indonesia PVMBG -->
+<script src="volcano.js"></script>
+
+<!-- =============================================
+     © 2025 CYBER PAMINAL MONITORING KARHUTLA
+     Hak Cipta Dilindungi Undang-Undang.
+     Dilarang menyalin, mendistribusikan, atau
+     memodifikasi tanpa izin tertulis.
+     UNAUTHORIZED USE IS STRICTLY PROHIBITED.
+============================================= -->
+
+<script>
+/* ═══════════════════════════════════════════
+   PROTECTION LAYER — Cyber Paminal v3.1
+   © 2025. All Rights Reserved.
+   ═══════════════════════════════════════════ */
+(function _protect(){
+  'use strict';
+
+  // ── 1. Disable Right-Click ──
+  document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    return false;
+  });
+
+  // ── 2. Disable Keyboard Shortcuts ──
+  document.addEventListener('keydown', function(e){
+    // F12
+    if(e.key === 'F12') { e.preventDefault(); return false; }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.key === 'u') { e.preventDefault(); return false; }
+    // Ctrl+Shift+I (DevTools)
+    if(e.ctrlKey && e.shiftKey && e.key === 'I') { e.preventDefault(); return false; }
+    // Ctrl+Shift+J (Console)
+    if(e.ctrlKey && e.shiftKey && e.key === 'J') { e.preventDefault(); return false; }
+    // Ctrl+Shift+C (Inspect Element)
+    if(e.ctrlKey && e.shiftKey && e.key === 'C') { e.preventDefault(); return false; }
+    // Ctrl+S (Save Page)
+    if(e.ctrlKey && e.key === 's') { e.preventDefault(); return false; }
+    // Ctrl+A (Select All)
+    if(e.ctrlKey && e.key === 'a') { e.preventDefault(); return false; }
+    // Ctrl+P (Print)
+    if(e.ctrlKey && e.key === 'p') { e.preventDefault(); return false; }
+  });
+
+  // ── 3. Disable Text Selection ──
+  document.addEventListener('selectstart', function(e){ e.preventDefault(); });
+  document.addEventListener('dragstart',   function(e){ e.preventDefault(); });
+
+  // ── 4. Disable Print Screen (visual warning) ──
+  document.addEventListener('keyup', function(e){
+    if(e.key === 'PrintScreen'){
+      navigator.clipboard.writeText('').catch(()=>{});
+      _showWarning();
+    }
+  });
+
+  // ── 5. DevTools Detection ──
+  var _devOpen = false;
+  var _threshold = 160;
+  var _overlay = null;
+
+  function _createOverlay(){
+    if(_overlay) return;
+    _overlay = document.createElement('div');
+    _overlay.id = '_protect_overlay';
+    _overlay.style.cssText = [
+      'position:fixed;inset:0;z-index:999999;',
+      'background:rgba(0,0,0,.97);',
+      'display:flex;flex-direction:column;align-items:center;justify-content:center;',
+      'font-family:"IBM Plex Mono",monospace;color:#ff2020;',
+      'backdrop-filter:blur(20px);',
+    ].join('');
+    _overlay.innerHTML = [
+      '<div style="font-size:48px;margin-bottom:16px">🛡️</div>',
+      '<div style="font-size:13px;font-weight:700;letter-spacing:.2em;margin-bottom:8px">AKSES DITOLAK</div>',
+      '<div style="font-size:9px;color:#ff6060;letter-spacing:.12em;margin-bottom:20px">INSPEKSI KODE TIDAK DIIZINKAN</div>',
+      '<div style="font-size:8px;color:#486080;text-align:center;max-width:320px;line-height:1.8">',
+      '© 2025 Cyber Paminal Monitoring Karhutla<br/>',
+      'Hak Cipta Dilindungi Undang-Undang RI<br/>',
+      'Pelanggaran dapat dikenai sanksi hukum.',
+      '</div>',
+      '<button onclick="document.getElementById(\'_protect_overlay\').style.display=\'none\'" ',
+      'style="margin-top:20px;background:transparent;border:1px solid #ff2020;color:#ff2020;',
+      'padding:6px 18px;border-radius:2px;cursor:pointer;font-family:monospace;font-size:9px;letter-spacing:.1em">',
+      'TUTUP',
+      '</button>',
+    ].join('');
+    document.body.appendChild(_overlay);
+  }
+
+  function _showWarning(){
+    _createOverlay();
+    _overlay.style.display = 'flex';
+    setTimeout(()=>{ if(_overlay) _overlay.style.display='none'; }, 3000);
+  }
+
+  function _checkDevTools(){
+    var t0 = performance.now();
+    (function(){}).constructor('debugger')();
+    var t1 = performance.now();
+    // Jika debugger aktif, waktu akan sangat lama
+    if(t1 - t0 > 100){
+      if(!_devOpen){
+        _devOpen = true;
+        _showWarning();
+      }
+    } else {
+      _devOpen = false;
+      if(_overlay) _overlay.style.display = 'none';
+    }
+  }
+
+  // Deteksi berdasarkan ukuran window
+  function _checkSize(){
+    var w = window.outerWidth  - window.innerWidth;
+    var h = window.outerHeight - window.innerHeight;
+    if(w > _threshold || h > _threshold){
+      if(!_devOpen){
+        _devOpen = true;
+        _showWarning();
+      }
+    } else {
+      if(_devOpen){
+        _devOpen = false;
+        if(_overlay) _overlay.style.display = 'none';
+      }
+    }
+  }
+
+  // Jalankan pengecekan berkala
+  setInterval(_checkSize, 1000);
+
+  // ── 6. Console Warning ──
+  var _c = console;
+  var _style1 = 'font-size:22px;font-weight:bold;color:#ff2020;';
+  var _style2 = 'font-size:11px;color:#888;';
+  setTimeout(function(){
+    _c.log('%c⚠️ PERINGATAN KEAMANAN', _style1);
+    _c.log('%c© 2025 Cyber Paminal Monitoring Karhutla\nHak Cipta Dilindungi. Akses tidak sah dilarang keras.\nUnauthorized access is strictly prohibited.', _style2);
+  }, 500);
+
+  // ── 7. Obfuscate source hint ──
+  Object.defineProperty(document, 'oncontextmenu', { get: function(){ return null; }, set: function(){} });
+
+})();
+</script>
+</body>
+</html>

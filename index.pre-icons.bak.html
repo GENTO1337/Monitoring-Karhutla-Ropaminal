@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Cyber Paminal Monitoring Karhutla — Bencana Alam Indonesia Realtime</title>
+<link rel="icon" type="image/png" href="https://e.top4top.io/p_3890wkoli1.jpeg"/>
+<meta name="description" content="Dashboard monitoring bencana alam realtime Indonesia"/>
+<!-- Copyright Protection -->
+<meta name="copyright" content="© 2025 Cyber Paminal. Hak Cipta Dilindungi."/>
+<meta name="author" content="Cyber Paminal"/>
+<meta name="robots" content="noindex, nofollow"/>
+<!-- Anti iframe embedding -->
+<script>if(window.top!==window.self){window.top.location=window.self.location;}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@500;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Globe.gl — 3D WebGL Globe -->
+<script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<link rel="stylesheet" href="cyber.css"/>
+</head>
+<body>
+
+<!-- ████ ICON SPRITE (menggantikan semua emoji) ████ -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2.5c.6 3.2 4.6 5.2 4.6 10a4.6 4.6 0 0 1-9.2 0c0-1.7.7-3 1.7-4 .1 1.4.8 2.3 1.7 2.6C10.2 8.6 10.6 5.2 12 2.5z"/><path d="M12 21.5a2.4 2.4 0 0 1-2.4-2.4c0-1.6 1.3-2.2 2.4-3.6 1.1 1.4 2.4 2 2.4 3.6a2.4 2.4 0 0 1-2.4 2.4z"/></symbol>
+    <symbol id="i-waves" viewBox="0 0 24 24"><path d="M2 7c2.2-2 4.2-2 6 0s3.800 2 6 0 3.800-2 6 0"/><path d="M2 12c2.200-2 4.200-2 6 0s3.800 2 6 0 3.800-2 6 0"/><path d="M2 17c2.200-2 4.200-2 6 0s3.800 2 6 0 3.800-2 6 0"/></symbol>
+    <symbol id="i-quake" viewBox="0 0 24 24"><path d="M2 12h4l2.500-7 4 14 3-9 1.500 2H22"/></symbol>
+    <symbol id="i-mountain" viewBox="0 0 24 24"><path d="M2 20 9 7l4 7 2.500-4L22 20z"/><path d="M7 11.500l2 1.500 2-1.500"/></symbol>
+    <symbol id="i-volcano" viewBox="0 0 24 24"><path d="M3 21l5.500-10h7L21 21z"/><path d="M10 11 9 7m5 4 1-4M12 11V4"/><path d="M7 4.500 5.500 3m11 1.500L18 3"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h10.500a2.800 2.800 0 1 0-2.800-2.800"/><path d="M3 12h15a2.800 2.800 0 1 1-2.800 2.800"/><path d="M3 16h7a2.500 2.500 0 1 1-2.500 2.500"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.500"/><circle cx="12" cy="12" r="4.200"/><path d="M12 1.500v4M12 18.500v4M1.500 12h4M18.500 12h4"/><circle cx="12" cy="12" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2.500 20 5.500v6c0 5-3.400 8.500-8 10-4.600-1.500-8-5-8-10v-6z"/><path d="M12 8.500v7M8.500 12h7"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21.500s7-6 7-11.500a7 7 0 0 0-14 0c0 5.500 7 11.500 7 11.500z"/><circle cx="12" cy="10" r="2.500"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.500l3.500 2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.500" y="5" width="17" height="15.500" rx="1.500"/><path d="M3.500 10h17M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-depth" viewBox="0 0 24 24"><path d="M12 3v15"/><path d="m6 13 6 6 6-6"/><path d="M4 21.500h16"/></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="5.500" rx="8" ry="3"/><path d="M4 5.500v13c0 1.700 3.600 3 8 3s8-1.300 8-3v-13"/><path d="M4 12c0 1.700 3.600 3 8 3s8-1.300 8-3"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5.500" y="5.500" width="13" height="13" rx="1.500"/><rect x="9.500" y="9.500" width="5" height="5"/><path d="M9 2v3.500M15 2v3.500M9 18.500V22M15 18.500V22M2 9h3.500M2 15h3.500M18.500 9H22M18.500 15H22"/></symbol>
+    <symbol id="i-news" viewBox="0 0 24 24"><path d="M4 5h13v14H6.500A2.500 2.500 0 0 1 4 16.500z"/><path d="M17 9h3v7.500a2.500 2.500 0 0 1-2.500 2.500M7.500 9H14M7.500 12.500H14M7.500 16H11"/></symbol>
+    <symbol id="i-tv" viewBox="0 0 24 24"><rect x="2.500" y="6.500" width="19" height="13" rx="1.500"/><path d="m8 2.500 4 4 4-4M8 22h8"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 22 20.500H2z"/><path d="M12 10v5M12 18v.01"/></symbol>
+    <symbol id="i-siren" viewBox="0 0 24 24"><path d="M7 18v-6a5 5 0 0 1 10 0v6"/><path d="M4.500 21h15M12 2v2.500M3.500 8l2 1M20.500 8l-2 1M2 13h2M20 13h2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12.500 5 5L20 6.500"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5.500 5.500l13 13M18.500 5.500l-13 13"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.200-4L4 9"/><path d="M4 4v5h5"/><path d="M4 13a8 8 0 0 0 14.200 4L20 15"/><path d="M20 20v-5h-5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.500" cy="10.500" r="6.500"/><path d="m20.500 20.500-5.400-5.400"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.500h3.500L13 5v14l-5.500-4.500H4z"/><path d="m17 9.500 5 5M22 9.500l-5 5"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.500h3.500L13 5v14l-5.500-4.500H4z"/><path d="M16.500 9a4.200 4.200 0 0 1 0 6M19.500 6a8.500 8.500 0 0 1 0 12"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M21.500 2.500 10.500 13.500"/><path d="m21.500 2.500-7 19-4-8.500-8.500-4z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17.500" rx="1.500"/><path d="M9 4V2.500h6V4M8.500 10h7M8.500 14h7M8.500 18h4"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.500"/><path d="M2.500 12h19"/><path d="M12 2.500c3 3 4.500 6 4.500 9.500s-1.500 6.500-4.500 9.500c-3-3-4.500-6-4.500-9.500S9 5.500 12 2.500z"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m9 4.500-6 2v13l6-2 6 2 6-2v-13l-6 2z"/><path d="M9 4.500v13M15 6.500v13"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.200 3.600-6.500 8-6.500s8 2.300 8 6.500"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="2.500" y="4" width="19" height="16" rx="1.500"/><path d="m6.500 9.500 3 2.500-3 2.500M12 15h5"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18.500a4.500 4.500 0 0 1-.6-8.900A6.500 6.500 0 0 1 18.800 11 3.800 3.800 0 0 1 18 18.500z"/></symbol>
+    <symbol id="i-vibrate" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="18" rx="1.500"/><path d="M4 8v8M20 8v8M1.500 10.500v3M22.500 10.500v3"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V11M10 20V4M16 20v-7M2 21h20"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.500" cy="15.500" r="4"/><path d="m10.500 12.500 9.500-9.500M16 7l3 3"/></symbol>
+    <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M16.200 7.800a6 6 0 0 1 0 8.400M7.800 16.200a6 6 0 0 1 0-8.400M19.100 4.900a10 10 0 0 1 0 14.200M4.900 19.100a10 10 0 0 1 0-14.200"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9.500 5-9.500 5L2.500 8z"/><path d="m2.500 12.500 9.500 5 9.500-5M2.500 16.500l9.500 5 9.500-5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2.500c.8 5.200 4.300 8.700 9.500 9.500-5.200.8-8.700 4.300-9.500 9.500-.8-5.200-4.300-8.700-9.500-9.500 5.200-.8 8.700-4.300 9.500-9.500z"/></symbol>
+    <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-loader" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.500"/><path d="M8 12h8"/></symbol>
+    <symbol id="i-thumb" viewBox="0 0 24 24"><path d="M7 11v9H3.500v-9zM7 11l4.500-8c1.800 0 2.800 1.300 2.500 3L13.500 9H19a2 2 0 0 1 2 2.300l-1.200 7A2 2 0 0 1 17.800 20H7"/></symbol>
+  </defs>
+</svg>
+
+<!-- ████ TOPBAR ████ -->
+<div id="topbar">
+  <!-- Logo -->
+  <div class="tb-seg">
+    <div class="logo-wrap">
+      <img class="logo-img" src="https://e.top4top.io/p_3890wkoli1.jpeg" alt="Cyber Paminal"/>
+      <div>
+        <span class="logo-name">CYBER PAMINAL<span class="logo-ver">v4.0</span></span>
+        <span class="logo-sub">MONITORING KARHUTLA</span>
+      </div>
+    </div>
+  </div>
+  <!-- LIVE + Region -->
+  <div class="tb-seg">
+    <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+    <select class="tb-select" id="reg-sel">
+      <option value="all">INDONESIA — SEMUA WILAYAH</option>
+      <option value="kalimantan">Kalimantan</option>
+      <option value="sulawesi">Sulawesi</option>
+      <option value="papua">Papua &amp; Papua Barat</option>
+      <option value="ntt">NTT / Flores / Timor</option>
+      <option value="lombok">Lombok / NTB / Sumbawa</option>
+      <option value="maluku">Maluku &amp; Maluku Utara</option>
+      <option value="jawa">Jawa</option>
+      <option value="sumatra">Sumatra</option>
+    </select>
+  </div>
+  <!-- Alert Level -->
+  <div class="tb-seg">
+    <div class="alert-pill al-kritis" id="alert-display">
+      <svg class="ico"><use href="#i-alert"/></svg> ALERT LVL <span id="alert-num">3</span> — TINGGI
+    </div>
+  </div>
+  <!-- Stat Chips -->
+  <div class="tb-seg" style="gap:6px">
+    <div class="chip ch-fire" id="chip-fire" title="Titik kebakaran terdeteksi"><svg class="ico"><use href="#i-flame"/></svg><span id="c-fire">0</span></div>
+    <div class="chip ch-flood" id="chip-flood" title="Banjir"><svg class="ico"><use href="#i-waves"/></svg><span id="c-flood">0</span></div>
+    <div class="chip ch-eq" id="chip-eq" title="Gempa bumi"><svg class="ico"><use href="#i-quake"/></svg><span id="c-eq">0</span></div>
+    <div class="chip ch-vol" id="chip-vol" title="Gunung api dipantau"><svg class="ico"><use href="#i-volcano"/></svg><span id="c-vol">0</span></div>
+    <div class="chip ch-hs" id="chip-hs" title="Hotspot satelit"><svg class="ico"><use href="#i-target"/></svg><span id="c-hs">847</span></div>
+  </div>
+  <!-- Search -->
+  <div class="tb-seg" style="position:relative">
+    <div class="tb-search">
+      <svg class="ico"><use href="#i-search"/></svg>
+      <input type="text" id="srch" placeholder="Cari lokasi / bencana..." autocomplete="off"/>
+    </div>
+    <div id="search-drop"></div>
+  </div>
+  <!-- Right -->
+  <div class="tb-seg" style="gap:7px">
+    <!-- 2D / 3D VIEW TOGGLE -->
+    <div class="view-toggle">
+      <button class="vtbtn on" id="btn-2d" onclick="setView2D()">2D</button>
+      <button class="vtbtn" id="btn-3d" onclick="setView3D()">3D</button>
+    </div>
+    <button class="tb-btn" id="btnFs"><svg class="ico"><use href="#i-expand"/></svg><span class="lbl">Fullscreen</span></button>
+    <button class="tb-btn" onclick="location.reload()"><svg class="ico"><use href="#i-refresh"/></svg><span class="lbl">Refresh</span></button>
+  </div>
+</div>
+
+<!-- ████ SUBBAR ████ -->
+<div id="subbar">
+  <div class="sb-l">
+    <span class="sb-label">SITUASI BENCANA</span>
+    <div class="tf-grp">
+      <button class="tf-btn" data-tf="1h">1J</button>
+      <button class="tf-btn" data-tf="6h">6J</button>
+      <button class="tf-btn" data-tf="24h">24J</button>
+      <button class="tf-btn on" data-tf="7d">7H</button>
+      <button class="tf-btn" data-tf="all">ALL</button>
+    </div>
+    <span class="sb-clock" id="clock">-- : -- : -- WIB</span>
+  </div>
+  <div class="sb-r">
+    <span class="sb-evcount" id="ev-lbl">Memuat data...</span>
+  </div>
+</div>
+
+<!-- ████ MAP ████ -->
+<div id="map-wrap">
+  <div id="map"></div>
+  <div id="alarm-frame"></div>
+
+  <!-- Banner peringatan saat ada kejadian baru -->
+  <div id="alert-banner">
+    <div class="ab-ico" id="ab-ico"></div>
+    <div>
+      <div class="ab-k" id="ab-k">DETEKSI KEJADIAN</div>
+      <div class="ab-t" id="ab-t">—</div>
+      <div class="ab-s" id="ab-s"></div>
+    </div>
+  </div>
+
+  <!-- ████ 3D GLOBE CONTAINER ████ -->
+  <div id="globe-container">
+    <div id="globe-info">
+      <div class="gi-hd"><svg class="ico"><use href="#i-globe"/></svg>GLOBE 3D — REALTIME</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ff2e4d;color:#ff2e4d"></div> Gempa M≥6.5 (Kritis)</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ff7a1a;color:#ff7a1a"></div> Gempa M5.5–6.4 (Tinggi)</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ffb020;color:#ffb020"></div> Gempa M4.5–5.4 (Sedang)</div>
+      <div class="gi-row"><div class="gi-dot" style="background:#ffe14a;color:#ffe14a"></div> Gempa &lt;M4.5 (Rendah)</div>
+      <div class="gi-row" style="margin-top:4px"><div class="gi-dot" style="background:#ff5a1f;color:#ff5a1f"></div> Kebakaran/Karhutla</div>
+    </div>
+    <div id="globe-tip"><svg class="ico"><use href="#i-target"/></svg>Klik titik untuk detail · Scroll untuk zoom · Drag untuk rotasi</div>
+  </div>
+
+  <!-- Layer Panel -->
+  <div id="lpanel" class="hud hud2d">
+    <div class="lp-hd">
+      <span class="lp-ttl"><svg class="ico"><use href="#i-layers"/></svg>LAYERS</span>
+      <span class="lp-cnt" id="lp-active">8</span>
+    </div>
+    <div id="layer-list"></div>
+  </div>
+
+  <!-- Incident Radar -->
+  <div id="incident-feed" class="hud hud2d">
+    <div class="if-hd">
+      <span class="if-ttl"><i></i>INCIDENT RADAR</span>
+      <span class="if-cnt" id="if-cnt">0</span>
+    </div>
+    <div class="if-list" id="if-list"><div class="if-empty">Memindai kejadian gempa &amp; kebakaran...</div></div>
+  </div>
+
+  <!-- Legend -->
+  <div id="legend" class="hud2d">
+    <div class="leg"><div class="leg-d" style="background:var(--kritis);box-shadow:0 0 8px var(--kritis)"></div>Kritis</div>
+    <div class="leg"><div class="leg-d" style="background:var(--tinggi);box-shadow:0 0 8px var(--tinggi)"></div>Tinggi</div>
+    <div class="leg"><div class="leg-d" style="background:var(--sedang);box-shadow:0 0 8px var(--sedang)"></div>Sedang</div>
+    <div class="leg"><div class="leg-d" style="background:var(--rendah);box-shadow:0 0 8px var(--rendah)"></div>Rendah</div>
+    <div class="leg-sep"></div>
+    <div class="leg"><svg class="ico" style="color:var(--fire)"><use href="#i-flame"/></svg>Karhutla</div>
+    <div class="leg"><svg class="ico" style="color:var(--flood2)"><use href="#i-waves"/></svg>Banjir</div>
+    <div class="leg"><svg class="ico" style="color:var(--quake)"><use href="#i-quake"/></svg>Gempa</div>
+    <div class="leg"><svg class="ico" style="color:var(--volcano)"><use href="#i-volcano"/></svg>Gunung Api</div>
+    <div class="leg"><svg class="ico" style="color:var(--hotspot)"><use href="#i-target"/></svg>Hotspot</div>
+    <div class="leg-sep"></div>
+    <div class="leg"><i class="leg-s s-hot"></i>Baru &lt;10m</div><div class="leg"><i class="leg-s s-live"></i>Live &lt;30m</div><div class="leg"><i class="leg-s s-glow"></i>Menyala &lt;24j</div><div class="leg"><i class="leg-s s-off"></i>Redup</div>
+<div class="leg-sep"></div>
+<span class="leg-src">© CartoDB · BNPB · BMKG · NASA FIRMS</span>
+  </div>
+</div>
+
+<!-- ████ BOTTOM PANELS ████ -->
+<div id="bot">
+
+  <!-- LEFT: LIVE TV -->
+  <div class="bp" id="tv-panel">
+    <div class="bphd">
+      <div class="bphd-l">
+        <span class="bphd-title"><svg class="ico"><use href="#i-tv"/></svg>Live TV News</span>
+        <span class="badge-live">LIVE</span>
+      </div>
+      <div class="bphd-r">
+        <button class="bpbtn" id="tv-mute-btn" onclick="toggleMute()"><svg class="ico"><use href="#i-mute"/></svg></button>
+        <button class="bpbtn" onclick="refreshTV()"><svg class="ico"><use href="#i-refresh"/></svg></button>
+      </div>
+    </div>
+    <!-- Channel tabs -->
+    <div class="tv-tabs" id="tv-tabs">
+      <div class="tvtab on" data-ch="kompas"><span class="tv-dot"></span>Kompas TV</div>
+      <div class="tvtab" data-ch="tvone"><span class="tv-dot"></span>tvOne</div>
+      <div class="tvtab" data-ch="inews"><span class="tv-dot"></span>iNews</div>
+      <div class="tvtab" data-ch="cnn"><span class="tv-dot"></span>CNN ID</div>
+    </div>
+    <!-- TV iframes -->
+    <div class="tv-frame-wrap" id="tv-frame-wrap">
+      <iframe id="tv-kompas" class="tv-frame on"
+        data-src="https://www.youtube.com/embed/DOOrIxw5xOw?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="Kompas TV Live"></iframe>
+      <iframe id="tv-tvone" class="tv-frame"
+        data-src="https://www.youtube.com/embed/rQJoEpzKkNk?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="tvOne News Live"></iframe>
+      <iframe id="tv-inews" class="tv-frame"
+        data-src="https://www.youtube.com/embed/WHTPYAvakTg?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="iNews TV Live"></iframe>
+      <iframe id="tv-cnn" class="tv-frame"
+        data-src="https://www.youtube.com/embed/PDDOkUq33Sw?autoplay=1&mute=1&rel=0&modestbranding=1&showinfo=0"
+        allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="CNN Indonesia Live"></iframe>
+    </div>
+    <!-- Breaking ticker -->
+    <div class="tv-ticker">
+      <div class="tv-tick-label"><svg class="ico"><use href="#i-siren"/></svg>BREAKING</div>
+      <div class="tv-tick-track" id="tick-track"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: LIVE BERITA ONLINE -->
+  <div class="bp" id="news-panel">
+    <div class="bphd">
+      <div class="bphd-l">
+        <span class="bphd-title"><svg class="ico"><use href="#i-news"/></svg>Berita Bencana Live</span>
+        <span class="badge-live">REALTIME</span>
+        <span class="count-lbl" id="news-count-lbl">—</span>
+      </div>
+      <div class="bphd-r">
+        <button class="bpbtn" id="news-auto-btn" onclick="toggleAutoRefresh()" title="Auto refresh"><svg class="ico"><use href="#i-refresh"/></svg>AUTO</button>
+        <button class="bpbtn" onclick="fetchAllNews()"><svg class="ico"><use href="#i-refresh"/></svg></button>
+      </div>
+    </div>
+    <!-- Filter bar -->
+    <div class="news-filter" id="news-filter">
+      <span class="nf-lbl">SENTIMEN</span>
+      <button class="nf-btn on" data-src="all">Semua</button>
+      <button class="nf-btn" data-src="negative"><svg class="ico"><use href="#i-alert"/></svg>Negatif</button>
+      <button class="nf-btn" data-src="positive"><svg class="ico"><use href="#i-check"/></svg>Positif</button>
+      <button class="nf-btn" data-src="neutral"><svg class="ico"><use href="#i-minus"/></svg>Netral</button>
+      <div class="nf-sep"></div>
+      <span class="nf-lbl">BENCANA</span>
+      <button class="nf-btn" data-type="fire"><svg class="ico"><use href="#i-flame"/></svg>Karhutla</button>
+      <button class="nf-btn" data-type="flood"><svg class="ico"><use href="#i-waves"/></svg>Banjir</button>
+      <button class="nf-btn" data-type="earthquake"><svg class="ico"><use href="#i-quake"/></svg>Gempa</button>
+      <button class="nf-btn" data-type="volcano"><svg class="ico"><use href="#i-volcano"/></svg>Gunung Api</button>
+      <button class="nf-btn" data-type="landslide"><svg class="ico"><use href="#i-mountain"/></svg>Longsor</button>
+      <button class="nf-btn" data-type="wind"><svg class="ico"><use href="#i-wind"/></svg>Angin</button>
+    </div>
+    <!-- Articles -->
+    <div class="news-list" id="news-list">
+      <div class="news-loading">
+        <div class="spinner"></div>
+        <span>Mengambil berita bencana terbaru...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: SIAGA AI INSIGHTS -->
+  <div class="bp" id="ai-panel">
+    <div class="bphd">
+      <div class="bphd-l">
+        <span class="bphd-title"><svg class="ico"><use href="#i-cpu"/></svg>AI Insights</span>
+        <span class="badge-gemini"><svg class="ico"><use href="#i-spark"/></svg>GEMINI</span>
+      </div>
+      <div class="bphd-r">
+        <span class="badge-new hidden" id="ai-new-badge">0 BARU</span>
+        <button class="bpbtn" onclick="clearAIChat()">Bersihkan</button>
+        <button class="bpbtn" onclick="autoAnalyze()"><svg class="ico"><use href="#i-bolt"/></svg>Analisis</button>
+      </div>
+    </div>
+    <div class="ai-body">
+      <!-- API Key setup -->
+      <div class="ai-setup" id="ai-setup">
+        <div class="ai-setup-title">
+          <svg class="ico"><use href="#i-cpu"/></svg>
+          SIAGA AI PAMINAL
+          <span class="ai-chip">AUTO-CONNECT</span>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <form onsubmit="return false" autocomplete="off" style="display:contents"><input type="password" class="ai-key-input" id="ai-key-input" autocomplete="off" placeholder="Konfigurasi otomatis..."/></form>
+          <button class="ai-key-btn" onclick="connectGemini()"><svg class="ico"><use href="#i-refresh"/></svg></button>
+        </div>
+        <div class="ai-key-status" id="ai-key-status"><svg class="ico ico-sm"><use href="#i-loader"/></svg>Menghubungkan...</div>
+        <div class="ds-row">
+          <span><svg class="ico"><use href="#i-radio"/></svg>BMKG: <span id="data-status-bmkg" style="color:var(--text3)">Loading</span></span>
+          <span><svg class="ico"><use href="#i-news"/></svg>News: <span id="data-status-news" style="color:var(--text3)">Loading</span></span>
+        </div>
+      </div>
+      <!-- Chat -->
+      <div class="ai-chat" id="ai-chat"></div>
+      <!-- Typing indicator -->
+      <div class="ai-typing hidden" id="ai-typing">
+        <svg class="ico"><use href="#i-spark"/></svg><span>GEMINI SEDANG MENGANALISIS</span>
+        <div class="dot-pulse"><span></span><span></span><span></span></div>
+      </div>
+      <!-- Quick questions -->
+      <div class="ai-quick-btns" id="ai-quick-btns">
+        <button class="ai-qbtn" onclick="quickAsk('Ringkaskan semua bencana aktif saat ini')"><svg class="ico"><use href="#i-clipboard"/></svg>Ringkasan</button>
+        <button class="ai-qbtn" onclick="quickAsk('Wilayah mana yang paling berisiko dan mengapa?')"><svg class="ico"><use href="#i-alert"/></svg>Risiko</button>
+        <button class="ai-qbtn" onclick="quickAsk('Analisis karhutla Kalimantan terkini')"><svg class="ico"><use href="#i-flame"/></svg>Karhutla</button>
+        <button class="ai-qbtn" onclick="quickAsk('Update status gunung api aktif Indonesia')"><svg class="ico"><use href="#i-volcano"/></svg>Gunung Api</button>
+        <button class="ai-qbtn" onclick="quickAsk('Prediksi cuaca dan potensi bencana 24 jam ke depan')"><svg class="ico"><use href="#i-cloud"/></svg>Prediksi</button>
+        <button class="ai-qbtn" onclick="quickAsk('Rekomendasi evakuasi untuk daerah kritis')"><svg class="ico"><use href="#i-siren"/></svg>Evakuasi</button>
+      </div>
+      <!-- Input -->
+      <div class="ai-input-area">
+        <textarea class="ai-textarea" id="ai-input" placeholder="Tanya Gemini tentang bencana..." rows="2"></textarea>
+        <button class="ai-send-btn" id="ai-send" onclick="sendAIMessage()"><svg class="ico"><use href="#i-send"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /bot -->
+
+<!-- ████ MODAL ████ -->
+<div id="modal">
+  <div id="mbox">
+    <div class="minner" id="minner">
+      <button class="mbtn-close" onclick="closeModal()"><svg class="ico"><use href="#i-x"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<!-- ████ TOASTS ████ -->
+<div id="toast-wrap"></div>
+
+<script src="siaga.min.js"></script>
+<!-- Volcano Monitoring Module — MAGMA Indonesia PVMBG -->
+<script src="volcano.js"></script>
+
+<!-- =============================================
+     © 2025 CYBER PAMINAL MONITORING KARHUTLA
+     Hak Cipta Dilindungi Undang-Undang.
+     Dilarang menyalin, mendistribusikan, atau
+     memodifikasi tanpa izin tertulis.
+     UNAUTHORIZED USE IS STRICTLY PROHIBITED.
+============================================= -->
+
+<script>
+/* ═══════════════════════════════════════════
+   PROTECTION LAYER — Cyber Paminal v4.0
+   © 2025. All Rights Reserved.
+   ═══════════════════════════════════════════ */
+(function _protect(){
+  'use strict';
+
+  // ── 1. Disable Right-Click ──
+  document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    return false;
+  });
+
+  // ── 2. Disable Keyboard Shortcuts ──
+  document.addEventListener('keydown', function(e){
+    // F12
+    if(e.key === 'F12') { e.preventDefault(); return false; }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.key === 'u') { e.preventDefault(); return false; }
+    // Ctrl+Shift+I (DevTools)
+    if(e.ctrlKey && e.shiftKey && e.key === 'I') { e.preventDefault(); return false; }
+    // Ctrl+Shift+J (Console)
+    if(e.ctrlKey && e.shiftKey && e.key === 'J') { e.preventDefault(); return false; }
+    // Ctrl+Shift+C (Inspect Element)
+    if(e.ctrlKey && e.shiftKey && e.key === 'C') { e.preventDefault(); return false; }
+    // Ctrl+S (Save Page)
+    if(e.ctrlKey && e.key === 's') { e.preventDefault(); return false; }
+    // Ctrl+A (Select All)
+    if(e.ctrlKey && e.key === 'a') { e.preventDefault(); return false; }
+    // Ctrl+P (Print)
+    if(e.ctrlKey && e.key === 'p') { e.preventDefault(); return false; }
+  });
+
+  // ── 3. Disable Text Selection ──
+  document.addEventListener('selectstart', function(e){ e.preventDefault(); });
+  document.addEventListener('dragstart',   function(e){ e.preventDefault(); });
+
+  // ── 4. Disable Print Screen (visual warning) ──
+  document.addEventListener('keyup', function(e){
+    if(e.key === 'PrintScreen'){
+      navigator.clipboard.writeText('').catch(()=>{});
+      _showWarning();
+    }
+  });
+
+  // ── 5. DevTools Detection ──
+  var _devOpen = false;
+  var _threshold = 160;
+  var _overlay = null;
+
+  function _createOverlay(){
+    if(_overlay) return;
+    _overlay = document.createElement('div');
+    _overlay.id = '_protect_overlay';
+    _overlay.style.cssText = [
+      'position:fixed;inset:0;z-index:999999;',
+      'background:rgba(2,4,10,.97);',
+      'display:flex;flex-direction:column;align-items:center;justify-content:center;',
+      'font-family:"JetBrains Mono","IBM Plex Mono",monospace;color:#ff2e4d;',
+      'backdrop-filter:blur(20px);',
+    ].join('');
+    _overlay.innerHTML = [
+      '<svg viewBox="0 0 24 24" width="64" height="64" style="margin-bottom:18px;fill:none;stroke:#ff2e4d;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 12px #ff2e4d)"><path d="M12 2.5 20 5.5v6c0 5-3.4 8.5-8 10-4.6-1.5-8-5-8-10v-6z"/><path d="M12 8.5v4M12 15.500v.01"/></svg>',
+      '<div style="font-family:Orbitron,sans-serif;font-size:15px;font-weight:700;letter-spacing:.3em;margin-bottom:8px;text-shadow:0 0 14px #ff2e4d">AKSES DITOLAK</div>',
+      '<div style="font-size:10px;color:#ff6b85;letter-spacing:.14em;margin-bottom:20px">INSPEKSI KODE TIDAK DIIZINKAN</div>',
+      '<div style="font-size:9px;color:#5a7a9b;text-align:center;max-width:340px;line-height:1.9">',
+      '© 2025 Cyber Paminal Monitoring Karhutla<br/>',
+      'Hak Cipta Dilindungi Undang-Undang RI<br/>',
+      'Pelanggaran dapat dikenai sanksi hukum.',
+      '</div>',
+      '<button onclick="document.getElementById(\'_protect_overlay\').style.display=\'none\'" ',
+      'style="margin-top:22px;background:transparent;border:1px solid #ff2e4d;color:#ff2e4d;',
+      'padding:7px 22px;cursor:pointer;font-family:monospace;font-size:10px;letter-spacing:.14em">',
+      'TUTUP',
+      '</button>',
+    ].join('');
+    document.body.appendChild(_overlay);
+  }
+
+  function _showWarning(){
+    _createOverlay();
+    _overlay.style.display = 'flex';
+    setTimeout(()=>{ if(_overlay) _overlay.style.display='none'; }, 3000);
+  }
+
+  function _checkDevTools(){
+    var t0 = performance.now();
+    (function(){}).constructor('debugger')();
+    var t1 = performance.now();
+    // Jika debugger aktif, waktu akan sangat lama
+    if(t1 - t0 > 100){
+      if(!_devOpen){
+        _devOpen = true;
+        _showWarning();
+      }
+    } else {
+      _devOpen = false;
+      if(_overlay) _overlay.style.display = 'none';
+    }
+  }
+
+  // Deteksi berdasarkan ukuran window
+  function _checkSize(){
+    var w = window.outerWidth  - window.innerWidth;
+    var h = window.outerHeight - window.innerHeight;
+    if(w > _threshold || h > _threshold){
+      if(!_devOpen){
+        _devOpen = true;
+        _showWarning();
+      }
+    } else {
+      if(_devOpen){
+        _devOpen = false;
+        if(_overlay) _overlay.style.display = 'none';
+      }
+    }
+  }
+
+  // Jalankan pengecekan berkala
+  setInterval(_checkSize, 1000);
+
+  // ── 6. Console Warning ──
+  var _c = console;
+  var _style1 = 'font-size:22px;font-weight:bold;color:#ff2e4d;';
+  var _style2 = 'font-size:11px;color:#888;';
+  setTimeout(function(){
+    _c.log('%cPERINGATAN KEAMANAN', _style1);
+    _c.log('%c© 2025 Cyber Paminal Monitoring Karhutla\nHak Cipta Dilindungi. Akses tidak sah dilarang keras.\nUnauthorized access is strictly prohibited.', _style2);
+  }, 500);
+
+  // ── 7. Obfuscate source hint ──
+  Object.defineProperty(document, 'oncontextmenu', { get: function(){ return null; }, set: function(){} });
+
+})();
+</script>
+</body>
+</html>
