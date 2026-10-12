@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="karhutlarealtime.jpg" alt="Cyber Paminal Logo" width="120" />
+  <img src="karhutlarealtime.jpg" alt="Cyber Paminal Logo" width="270" />
   <h1>Cyber Paminal Monitoring Karhutla</h1>
   <p><strong>Dashboard Monitoring Bencana Alam Indonesia Secara Real-time v3.1</strong></p>
 </div>
